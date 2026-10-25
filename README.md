@@ -4,7 +4,7 @@ API clínica do prontuário [Implante Flow](https://github.com/Orthoflow-Resende
 
 ## Imagem no GitHub Container Registry
 
-A imagem de produção fica em [ghcr.io/orthoflow-tecnologia/implante-flow-api](https://github.com/Orthoflow-Tecnologia/implante-flow-api/pkgs/container/implante-flow-api), vinculada a este repositório. Tags: `latest` e `0.2.1` (multi-arch `linux/amd64` e `linux/arm64`).
+A imagem de produção fica em [ghcr.io/l2s-labs/implante-flow-api](https://github.com/orgs/l2s-labs/packages/container/package/implante-flow-api), vinculada a este repositório. Tags: `latest` e `0.2.1` (multi-arch `linux/amd64` e `linux/arm64`).
 
 O pacote é **privado**: quem puxa a imagem precisa de acesso ao repositório (ou permissão explícita no pacote) e de um token com escopo `read:packages`.
 
@@ -12,7 +12,7 @@ O pacote é **privado**: quem puxa a imagem precisa de acesso ao repositório (o
 # autenticação (PAT classic com read:packages, ou token do gh)
 echo "$GITHUB_TOKEN" | docker login ghcr.io -u USERNAME --password-stdin
 
-docker pull ghcr.io/orthoflow-tecnologia/implante-flow-api:latest
+docker pull ghcr.io/l2s-labs/implante-flow-api:latest
 ```
 
 Copie as variáveis abaixo para um `.env` (em staging/production `DATABASE_URL` e WorkOS são obrigatórios):
@@ -38,13 +38,13 @@ CORS_ORIGINS=
 
 ```bash
 docker run --rm -p 3000:3000 --env-file .env \
-  ghcr.io/orthoflow-tecnologia/implante-flow-api:latest
+  ghcr.io/l2s-labs/implante-flow-api:latest
 ```
 
 Em Compose, troque o `build: .` do serviço `api` por:
 
 ```yaml
-image: ghcr.io/orthoflow-tecnologia/implante-flow-api:latest
+image: ghcr.io/l2s-labs/implante-flow-api:latest
 ```
 
 A imagem escuta em `0.0.0.0:3000`, roda sem privilégio e já define healthcheck em `GET /health`. Segredos não entram na imagem: passe tudo por ambiente. Migrations em `migrations/` rodam na subida do processo.

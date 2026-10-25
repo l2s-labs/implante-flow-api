@@ -9,7 +9,7 @@ RUN npm run build
 
 FROM node:24-alpine AS runtime
 WORKDIR /app
-LABEL org.opencontainers.image.source=https://github.com/Orthoflow-Tecnologia/implante-flow-api
+LABEL org.opencontainers.image.source=https://github.com/l2s-labs/implante-flow-api
 LABEL org.opencontainers.image.description="API clínica do Implante Flow"
 LABEL org.opencontainers.image.licenses=UNLICENSED
 ENV NODE_ENV=production
