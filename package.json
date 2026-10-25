@@ -1,6 +1,6 @@
 {
   "name": "implante-flow-api",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "API clínica do Implante Flow",
   "scripts": {
     "test": "tsx --test test/*.test.ts",

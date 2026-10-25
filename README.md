@@ -4,7 +4,7 @@ API clínica do prontuário [Implante Flow](https://github.com/Orthoflow-Resende
 
 ## Imagem no GitHub Container Registry
 
-A imagem de produção fica em [ghcr.io/orthoflow-tecnologia/implante-flow-api](https://github.com/Orthoflow-Tecnologia/implante-flow-api/pkgs/container/implante-flow-api), vinculada a este repositório. Tags: `latest` e `0.2.0` (multi-arch `linux/amd64` e `linux/arm64`).
+A imagem de produção fica em [ghcr.io/orthoflow-tecnologia/implante-flow-api](https://github.com/Orthoflow-Tecnologia/implante-flow-api/pkgs/container/implante-flow-api), vinculada a este repositório. Tags: `latest` e `0.2.1` (multi-arch `linux/amd64` e `linux/arm64`).
 
 O pacote é **privado**: quem puxa a imagem precisa de acesso ao repositório (ou permissão explícita no pacote) e de um token com escopo `read:packages`.
 
