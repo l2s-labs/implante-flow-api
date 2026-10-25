@@ -153,16 +153,18 @@ export function assertProcedureShape(input: {
 
   if (input.modality === 'enxerto') {
     if (input.subtype) throw new ClinicValidationError('Enxerto sozinho não tem subtipo.')
-    if (input.sites.length !== 1 || input.sites[0]?.role !== 'pilar') {
-      throw new ClinicValidationError('Enxerto sozinho usa um dente pilar.')
+    if (input.sites.length < 1 || input.sites.some((site) => site.role !== 'pilar')) {
+      throw new ClinicValidationError('Enxerto sozinho usa só dentes pilares.')
     }
-    if (input.sites[0]?.piece) throw new ClinicValidationError('Enxerto sozinho não recebe peça de implante.')
+    if (input.sites.some((site) => site.piece)) {
+      throw new ClinicValidationError('Enxerto sozinho não recebe peça de implante.')
+    }
     return
   }
 
   if (input.subtype === 'unitario') {
-    if (input.sites.length !== 1 || input.sites[0]?.role !== 'pilar') {
-      throw new ClinicValidationError('Implante unitário usa um dente pilar.')
+    if (input.sites.length < 1 || input.sites.some((site) => site.role !== 'pilar')) {
+      throw new ClinicValidationError('Implante unitário usa só dentes pilares.')
     }
     return
   }
