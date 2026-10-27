@@ -158,19 +158,20 @@ test('L2S-73 soft delete esconde do get/chart e bloqueia mutação; sem hard del
   )
   assert.ok(sites.length >= 1)
 
-  // Idempotente: segundo DELETE → 403 (já excluído / não encontrado para o app)
+  // Idempotente: segundo DELETE → 404 (já excluído; Ciber anti-enumeração)
   const again = await app.inject({
     method: 'DELETE',
     url: `/v1/procedures/${procedureId}`,
     headers: { authorization: 'Bearer ana' },
   })
-  assert.equal(again.statusCode, 403)
+  assert.equal(again.statusCode, 404)
+  assert.equal(again.json<{ error: { code: string } }>().error.code, 'not_found')
 
   await app.close()
   await database.close()
 })
 
-test('L2S-73 anti-IDOR: outro dentista não soft-deleta', async () => {
+test('L2S-73 anti-IDOR: outro dentista recebe 404 no soft-delete', async () => {
   const { app, database } = await setup()
 
   const patientRes = await app.inject({
@@ -182,12 +183,13 @@ test('L2S-73 anti-IDOR: outro dentista não soft-deleta', async () => {
   const patientId = patientRes.json<{ id: string }>().id
   const saved = await createProcedure(app, patientId)
 
-  const denied = await app.inject({
+  const foreign = await app.inject({
     method: 'DELETE',
     url: `/v1/procedures/${saved.id}`,
     headers: { authorization: 'Bearer bia' },
   })
-  assert.equal(denied.statusCode, 403)
+  assert.equal(foreign.statusCode, 404)
+  assert.equal(foreign.json<{ error: { code: string } }>().error.code, 'not_found')
 
   const stillThere = await app.inject({
     method: 'GET',

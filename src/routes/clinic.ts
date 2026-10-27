@@ -259,7 +259,7 @@ export async function registerClinicRoutes(app: FastifyInstance): Promise<void> 
             response: {
               204: { type: 'null', description: 'Procedimento marcado como excluído' },
               401: errorResponseSchema,
-              403: errorResponseSchema,
+              404: errorResponseSchema,
               503: errorResponseSchema,
             },
           },
@@ -272,7 +272,16 @@ export async function registerClinicRoutes(app: FastifyInstance): Promise<void> 
             request.dentist.id,
             (request.params as { procedureId: string }).procedureId,
           )
-          if (!ok) return reply.status(403).send(denied(request))
+          // Ciber: 404 (não 403) — anti-enumeração (missing / foreign / already deleted)
+          if (!ok) {
+            return reply.status(404).send({
+              error: {
+                code: 'not_found',
+                message: 'Procedimento não encontrado.',
+                requestId: request.id,
+              },
+            })
+          }
           return reply.status(204).send()
         },
       )
