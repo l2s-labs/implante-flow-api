@@ -22,6 +22,8 @@ import { registerPracticeRoutes } from './routes/practice.js'
 import { registerHealthRoutes, type ReadinessCheck } from './routes/health.js'
 import { registerAdminRoutes } from './routes/admin.js'
 import { registerV1Routes } from './routes/v1.js'
+import { registerCepRoutes } from './routes/ceps.js'
+import type { ViaCepClient } from './cep/lookup.js'
 import './types.js'
 
 export type BuildAppOptions = {
@@ -32,6 +34,7 @@ export type BuildAppOptions = {
   objectStore?: ObjectStore | null
   documentSigner?: DocumentSigner
   clock?: () => Date
+  viaCepClient?: ViaCepClient | null
 }
 
 function createStdoutAndDbLogStream(database: Database): Writable {
@@ -84,6 +87,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   app.decorate('database', database)
   app.decorate('objectStore', options.objectStore ?? null)
   app.decorate('clock', options.clock ?? (() => new Date()))
+  app.decorate('viaCepClient', options.viaCepClient ?? null)
 
   app.addHook('onRequest', async (request, reply) => {
     reply.header('x-request-id', request.id)
@@ -144,6 +148,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await registerClinicRoutes(app)
   await registerCatalogRoutes(app)
   await registerPracticeRoutes(app)
+  await registerCepRoutes(app)
   await registerPhotoRoutes(app)
   await registerCertificateRoutes(app, options.documentSigner)
   await registerReportRoutes(app)
