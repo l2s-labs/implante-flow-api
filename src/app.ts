@@ -23,6 +23,7 @@ import { registerHealthRoutes, type ReadinessCheck } from './routes/health.js'
 import { registerAdminRoutes } from './routes/admin.js'
 import { registerV1Routes } from './routes/v1.js'
 import { registerCepRoutes } from './routes/ceps.js'
+import { registerProsthesisFollowupRoutes } from './routes/prosthesis-followups.js'
 import type { ViaCepClient } from './cep/lookup.js'
 import './types.js'
 
@@ -149,6 +150,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await registerCatalogRoutes(app)
   await registerPracticeRoutes(app)
   await registerCepRoutes(app)
+  await registerProsthesisFollowupRoutes(app)
   await registerPhotoRoutes(app)
   await registerCertificateRoutes(app, options.documentSigner)
   await registerReportRoutes(app)
