@@ -1,0 +1,12 @@
+---
+description: Trabalhar sempre na branch stage (não em main)
+alwaysApply: true
+---
+
+# Branch de trabalho: stage
+
+- Base padrão de trabalho, commits e PRs: `stage` (não `main`).
+- Ao começar tarefa: `git checkout stage && git pull`.
+- Se `stage` não existir localmente: criar a partir de `origin/stage` ou, se o remote ainda não tiver, a partir de `main` e publicar com `-u`.
+- Não commitir nem fazer push direto em `main`, salvo pedido explícito do usuário.
+- PRs: `stage` → `main` (ou o fluxo de promoção do repositório), abertos como draft quando for o caso.
