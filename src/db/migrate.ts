@@ -1,9 +1,10 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { Database } from './database.js'
 
 export function migrationsDirectory(): string {
-  return join(new URL('../../migrations', import.meta.url).pathname)
+  return join(fileURLToPath(new URL('../../migrations', import.meta.url)))
 }
 
 export async function migrate(database: Database, directory = migrationsDirectory()): Promise<string[]> {
