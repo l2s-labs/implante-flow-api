@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { inflateSync } from 'node:zlib'
 import { test } from 'node:test'
 import { dentistForAccessToken } from '../src/auth/dentist.js'
 import { buildApp } from '../src/app.js'
@@ -6,6 +7,24 @@ import type { AppConfig } from '../src/config.js'
 import { migrate } from '../src/db/migrate.js'
 import { MemoryObjectStore } from '../src/files/object-store.js'
 import { PgliteDatabase } from './pglite-database.js'
+
+function pdfContentText(bytes: Uint8Array): string {
+  const raw = Buffer.from(bytes).toString('latin1')
+  const parts: string[] = []
+  for (const match of raw.matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)) {
+    const payload = Buffer.from(match[1] ?? '', 'latin1')
+    try {
+      parts.push(inflateSync(payload).toString('latin1'))
+    } catch {
+      parts.push(payload.toString('latin1'))
+    }
+  }
+  const decoded: string[] = []
+  for (const hex of parts.join('\n').matchAll(/<([0-9A-Fa-f]+)> Tj/g)) {
+    decoded.push(Buffer.from(hex[1] ?? '', 'hex').toString('latin1'))
+  }
+  return decoded.join('\n')
+}
 
 const config: AppConfig = {
   appEnv: 'test',
@@ -194,6 +213,80 @@ test('certificado exige CRO estruturado e aceita prótese sem peça', async () =
   })
   assert.equal(issued.statusCode, 201)
   assert.equal(issued.json<{ copies: number }>().copies, 2)
+  await app.close()
+  await database.close()
+})
+
+test('certificado lista todos os implantes com caixa de etiqueta', async () => {
+  const database = await PgliteDatabase.create()
+  await migrate(database)
+  const ana = await dentistForAccessToken(database, {
+    subject: 'user_ana_pdf',
+    email: 'ana-pdf@example.com',
+    name: 'Ana Dentista',
+  })
+  await database.query(
+    `UPDATE dentists SET cro = '44731', cro_uf = 'RJ', phone = '21987654321' WHERE id = $1`,
+    [ana.id],
+  )
+  const store = new MemoryObjectStore()
+  const app = await buildApp({
+    config,
+    database,
+    objectStore: store,
+    authenticate: async () => ana,
+  })
+  const { patientId, locationId } = await seedClinic(app)
+  const procedure = await app.inject({
+    method: 'POST',
+    url: `/v1/patients/${patientId}/procedures`,
+    headers: { authorization: 'Bearer ana' },
+    payload: {
+      modality: 'implante',
+      subtype: 'ponte',
+      surgeryDate: '2026-10-01',
+      sites: [
+        { fdi: 14, role: 'pilar' },
+        { fdi: 15, role: 'pontico' },
+        { fdi: 16, role: 'pilar' },
+      ],
+    },
+  })
+  assert.equal(procedure.statusCode, 201, procedure.body)
+  const procedureId = procedure.json<{ id: string }>().id
+  const sites = await database.query<{ id: string; fdi: number }>(
+    'SELECT id, fdi FROM tooth_sites WHERE procedure_id = $1 ORDER BY fdi',
+    [procedureId],
+  )
+  for (const site of sites.filter((item) => item.fdi !== 15)) {
+    await database.query(
+      `INSERT INTO implant_pieces (dentist_id, site_id, manufacturer, model, size)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [ana.id, site.id, 'Neodent', site.fdi === 14 ? 'Helix GM' : 'Drive CM', '3.5 x 10'],
+    )
+  }
+  const issued = await app.inject({
+    method: 'POST',
+    url: `/v1/procedures/${procedureId}/certificates`,
+    headers: { authorization: 'Bearer ana' },
+    payload: { locationId },
+  })
+  assert.equal(issued.statusCode, 201)
+  const key = [...store.objects.keys()].find((item) => item.includes(`/procedures/${procedureId}/certificates/`))
+  assert.ok(key)
+  const pdf = store.objects.get(key!)?.body
+  assert.ok(pdf)
+  const text = pdfContentText(pdf!)
+  assert.match(text, /Certificado de proced/)
+  assert.match(text, /Cole aqui a etiqueta/)
+  assert.match(text, /Dente 14/)
+  assert.match(text, /Dente 15/)
+  assert.match(text, /Dente 16/)
+  assert.match(text, /Neodent/)
+  assert.match(text, /Helix GM/)
+  assert.match(text, /Drive CM/)
+  assert.match(text, /Ana Dentista/)
+  assert.equal((text.match(/Cole aqui a etiqueta/g) ?? []).length, 2)
   await app.close()
   await database.close()
 })
