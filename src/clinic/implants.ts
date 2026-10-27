@@ -251,7 +251,7 @@ export async function insertImplantLinks(
       )
       if (mapped.length === 0) {
         // Fallback: keep legacy procedure_links for chart compatibility when inventory missing.
-        const found = await tx.query('SELECT id FROM procedures WHERE id = $1 AND patient_id = $2', [
+        const found = await tx.query('SELECT id FROM procedures WHERE id = $1 AND patient_id = $2 AND deleted_at IS NULL', [
           procedureLinkedId,
           patientId,
         ])

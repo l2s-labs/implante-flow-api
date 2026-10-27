@@ -45,7 +45,7 @@ async function loadChart(tx: Queryable): Promise<Record<string, unknown>> {
     'SELECT patient_id, location_id FROM patient_locations',
   )
   const procedures = await tx.query<Record<string, unknown>>(
-    'SELECT * FROM procedures ORDER BY surgery_date DESC, id',
+    'SELECT * FROM procedures WHERE deleted_at IS NULL ORDER BY surgery_date DESC, id',
   )
   const procedureIds = procedures.map((procedure) => procedure['id'] as string)
   const sites =

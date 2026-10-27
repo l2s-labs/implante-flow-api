@@ -353,7 +353,10 @@ export async function createProcedure(
       for (const link of input.linkedProcedureIds) {
         const linkedId = clientUuid(link)
         if (!linkedId) throw new ClinicValidationError('Procedimento vinculado inválido.')
-        const found = await tx.query('SELECT id FROM procedures WHERE id = $1', [linkedId])
+        const found = await tx.query(
+          'SELECT id FROM procedures WHERE id = $1 AND deleted_at IS NULL',
+          [linkedId],
+        )
         if (!found[0]) throw new ClinicValidationError('Procedimento vinculado não encontrado.')
         await tx.query(
           `INSERT INTO procedure_links (dentist_id, procedure_id, linked_procedure_id) VALUES ($1, $2, $3)`,
@@ -463,7 +466,10 @@ export async function getProcedure(
 }
 
 async function readProcedure(tx: Queryable, procedureId: string): Promise<Record<string, unknown> | null> {
-  const procedures = await tx.query<Record<string, unknown>>('SELECT * FROM procedures WHERE id = $1', [procedureId])
+  const procedures = await tx.query<Record<string, unknown>>(
+    'SELECT * FROM procedures WHERE id = $1 AND deleted_at IS NULL',
+    [procedureId],
+  )
   const procedure = procedures[0]
   if (!procedure) return null
   const sites = await tx.query<Record<string, unknown>>(
@@ -532,7 +538,7 @@ export async function updateProcedureStatus(
       subtype: string | null
       arch: string | null
       status_label: string
-    }>('SELECT modality, subtype, arch, status_label FROM procedures WHERE id = $1 FOR UPDATE', [procedureId])
+    }>('SELECT modality, subtype, arch, status_label FROM procedures WHERE id = $1 AND deleted_at IS NULL FOR UPDATE', [procedureId])
     const modality = current[0]?.modality
     const row = current[0]
     if (!modality || !row) return null
@@ -585,7 +591,7 @@ export async function recordVisit(
   if (statusLabel.length === 0) throw new ClinicValidationError('Informe o status da consulta.')
   return database.withDentist(dentistId, async (tx) => {
     const current = await tx.query<{ modality: string; status_label: string }>(
-      'SELECT modality, status_label FROM procedures WHERE id = $1 FOR UPDATE',
+      'SELECT modality, status_label FROM procedures WHERE id = $1 AND deleted_at IS NULL FOR UPDATE',
       [procedureId],
     )
     if (!current[0]) return null
@@ -622,9 +628,31 @@ export async function updateFollowUp(
            scheduled_on = COALESCE($3::date, scheduled_on),
            reminder_enabled = COALESCE($4, reminder_enabled)
        WHERE id = $1
+         AND EXISTS (
+           SELECT 1 FROM procedures p
+           WHERE p.id = follow_ups.procedure_id AND p.deleted_at IS NULL
+         )
        RETURNING *`,
       [followUpId, status, scheduledOn, typeof input['reminderEnabled'] === 'boolean' ? input['reminderEnabled'] : null],
     )
     return rows[0] ?? null
+  })
+}
+
+/** L2S-73: soft delete — marca deleted_at; sem hard delete. */
+export async function softDeleteProcedure(
+  database: Database,
+  dentistId: string,
+  procedureId: string,
+): Promise<boolean> {
+  return database.withDentist(dentistId, async (tx) => {
+    const rows = await tx.query<{ id: string }>(
+      `UPDATE procedures
+       SET deleted_at = now()
+       WHERE id = $1 AND deleted_at IS NULL
+       RETURNING id`,
+      [procedureId],
+    )
+    return rows.length > 0
   })
 }

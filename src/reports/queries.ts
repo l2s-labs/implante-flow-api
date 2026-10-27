@@ -112,7 +112,7 @@ export async function reportSummary(database: Database, dentistId: string, scope
           WHERE ${patientPredicate()}
             AND NOT EXISTS (
               SELECT 1 FROM follow_ups
-              JOIN procedures ON procedures.id = follow_ups.procedure_id
+              JOIN procedures ON procedures.id = follow_ups.procedure_id AND procedures.deleted_at IS NULL
               WHERE procedures.patient_id = patients.id
                 AND follow_ups.status = 'agendado'
                 AND follow_ups.scheduled_on < $1::date
@@ -176,13 +176,13 @@ export async function reportPatients(
       ? `SELECT patients.id AS "patientId", patients.name,
                 COALESCE(json_agg(${appointmentJson} ORDER BY follow_ups.scheduled_on) FILTER (WHERE follow_ups.id IS NOT NULL), '[]'::json) AS appointments
          FROM patients
-         LEFT JOIN procedures ON procedures.patient_id = patients.id AND ($4 = '' OR procedures.modality = $4)
+         LEFT JOIN procedures ON procedures.patient_id = patients.id AND procedures.deleted_at IS NULL AND ($4 = '' OR procedures.modality = $4)
          LEFT JOIN follow_ups ON follow_ups.procedure_id = procedures.id AND ${match}
          WHERE ${patientPredicate()}
-           AND ($4 = '' OR EXISTS (SELECT 1 FROM procedures modality_procedure WHERE modality_procedure.patient_id = patients.id AND modality_procedure.modality = $4))
+           AND ($4 = '' OR EXISTS (SELECT 1 FROM procedures modality_procedure WHERE modality_procedure.patient_id = patients.id AND modality_procedure.deleted_at IS NULL AND modality_procedure.modality = $4))
            AND NOT EXISTS (
              SELECT 1 FROM follow_ups overdue
-             JOIN procedures overdue_procedure ON overdue_procedure.id = overdue.procedure_id
+             JOIN procedures overdue_procedure ON overdue_procedure.id = overdue.procedure_id AND overdue_procedure.deleted_at IS NULL
              WHERE overdue_procedure.patient_id = patients.id
                AND overdue.status = 'agendado'
                AND overdue.scheduled_on < $1::date
@@ -195,7 +195,7 @@ export async function reportPatients(
                 count(follow_ups.id)::int AS "appointmentCount",
                 COALESCE(json_agg(${appointmentJson} ORDER BY follow_ups.scheduled_on) FILTER (WHERE follow_ups.id IS NOT NULL), '[]'::json) AS appointments
          FROM patients
-         JOIN procedures ON procedures.patient_id = patients.id
+         JOIN procedures ON procedures.patient_id = patients.id AND procedures.deleted_at IS NULL
          JOIN follow_ups ON follow_ups.procedure_id = procedures.id AND ${match}
          WHERE ${patientPredicate()}
            AND $1::date IS NOT NULL
@@ -239,7 +239,7 @@ export async function reportAppointments(
 
 function appointmentFrom(): string {
   return `FROM patients
-          JOIN procedures ON procedures.patient_id = patients.id
+          JOIN procedures ON procedures.patient_id = patients.id AND procedures.deleted_at IS NULL
           JOIN follow_ups ON follow_ups.procedure_id = procedures.id
           WHERE ${patientPredicate()}
             AND $1::date IS NOT NULL

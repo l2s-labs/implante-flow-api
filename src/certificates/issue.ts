@@ -94,7 +94,7 @@ export async function issueCertificate(
        FROM procedures
        JOIN patients ON patients.id = procedures.patient_id
        JOIN dentists ON dentists.id = procedures.dentist_id
-       WHERE procedures.id = $1
+       WHERE procedures.id = $1 AND procedures.deleted_at IS NULL
        FOR UPDATE`,
       [procedureId],
     )

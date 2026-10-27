@@ -54,7 +54,7 @@ export async function countClinicalAndCatalog(database: Database): Promise<Clini
   }>(
     `SELECT
        (SELECT COUNT(*)::text FROM patients) AS patients,
-       (SELECT COUNT(*)::text FROM procedures) AS procedures,
+       (SELECT COUNT(*)::text FROM procedures WHERE deleted_at IS NULL) AS procedures,
        (SELECT COUNT(*)::text FROM installed_implants) AS installed_implants,
        (SELECT COUNT(*)::text FROM implant_pieces) AS implant_pieces,
        (SELECT COUNT(*)::text FROM implant_manufacturers WHERE active) AS manufacturers,

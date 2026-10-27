@@ -15,6 +15,7 @@ import {
   getProcedure,
   listPatients,
   recordVisit,
+  softDeleteProcedure,
   updateFollowUp,
   updatePatient,
   updateProcedureStatus,
@@ -240,6 +241,41 @@ export async function registerClinicRoutes(app: FastifyInstance): Promise<void> 
         if (!procedure) return reply.status(403).send(denied(request))
         return procedure
       })
+
+      v1.delete(
+        '/procedures/:procedureId',
+        {
+          schema: {
+            tags: ['prontuario'],
+            operationId: 'softDeleteProcedure',
+            summary: 'Soft delete do procedimento (deleted_at; sem hard delete)',
+            security: [{ bearerAuth: [] }],
+            params: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['procedureId'],
+              properties: { procedureId: { type: 'string', format: 'uuid' } },
+            },
+            response: {
+              204: { type: 'null', description: 'Procedimento marcado como excluído' },
+              401: errorResponseSchema,
+              403: errorResponseSchema,
+              503: errorResponseSchema,
+            },
+          },
+        },
+        async (request, reply) => {
+          const database = databaseOf(request, reply)
+          if (!database || !request.dentist) return
+          const ok = await softDeleteProcedure(
+            database,
+            request.dentist.id,
+            (request.params as { procedureId: string }).procedureId,
+          )
+          if (!ok) return reply.status(403).send(denied(request))
+          return reply.status(204).send()
+        },
+      )
 
       v1.patch('/procedures/:procedureId', resourceSchema('updateProcedure'), async (request, reply) => {
         const database = databaseOf(request, reply)

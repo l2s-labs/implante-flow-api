@@ -362,6 +362,7 @@ export async function registerAdminRoutes(app: FastifyInstance): Promise<void> {
              LEFT JOIN (
                SELECT dentist_id, COUNT(*)::bigint AS cnt
                FROM procedures
+               WHERE deleted_at IS NULL
                GROUP BY dentist_id
              ) pr ON pr.dentist_id = d.id
              LEFT JOIN (

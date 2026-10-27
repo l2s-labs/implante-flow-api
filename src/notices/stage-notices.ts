@@ -27,7 +27,7 @@ export async function recordStageChange(
     `SELECT patients.id, patients.email, patients.phone, patients.notify_by_email, patients.notify_by_phone
      FROM procedures
      JOIN patients ON patients.id = procedures.patient_id AND patients.dentist_id = procedures.dentist_id
-     WHERE procedures.id = $1`,
+     WHERE procedures.id = $1 AND procedures.deleted_at IS NULL`,
     [procedureId],
   )
   const patient = patients[0]

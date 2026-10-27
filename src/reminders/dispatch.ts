@@ -72,6 +72,7 @@ export async function processDentistReminders(
      WHERE follow_ups.status = 'agendado'
        AND follow_ups.reminder_enabled
        AND dentists.reminder_enabled
+       AND procedures.deleted_at IS NULL
      GROUP BY follow_ups.id, patients.id, procedures.id, dentists.id`,
   )
   let sent = 0

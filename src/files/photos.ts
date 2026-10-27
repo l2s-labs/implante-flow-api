@@ -23,7 +23,10 @@ export async function createPhotoUpload(
   const photoId = randomUUID()
   const key = `dentists/${dentistId}/procedures/${procedureId}/photos/${photoId}`
   return database.withDentist(dentistId, async (tx) => {
-    const procedure = await tx.query('SELECT id FROM procedures WHERE id = $1', [procedureId])
+    const procedure = await tx.query(
+      'SELECT id FROM procedures WHERE id = $1 AND deleted_at IS NULL',
+      [procedureId],
+    )
     if (!procedure[0]) return null
     if (visitId) {
       const visit = await tx.query('SELECT id FROM visits WHERE id = $1 AND procedure_id = $2', [visitId, procedureId])
