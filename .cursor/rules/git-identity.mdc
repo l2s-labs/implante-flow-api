@@ -1,0 +1,12 @@
+---
+description: Nunca atribuir commits ao Cursor; usar identidade do usuário
+alwaysApply: true
+---
+
+# Identidade Git
+
+- **Nunca** usar `cursor` (nem `Cursor`, `cursoragent`, etc.) como author, committer, escopo de Conventional Commit, trailer `Co-authored-by`, ou qualquer atribuição no histórico.
+- Escopos válidos descrevem o domínio (`apk`, `certificates`, `ci`, `chore`, …), não a ferramenta que gerou a mudança.
+- Author/committer: sempre a identidade já configurada no repo (`git config user.name` / `user.email`) — tipicamente Luis Amorim. Não sobrescrever com identidade de agente.
+- Não adicionar `Co-authored-by: Cursor` nem trailers equivalentes.
+- Mensagens erradas já no remoto: corrigir com commit novo (ou amend só se o usuário pedir explicitamente e for seguro); não reescrever `main`.
